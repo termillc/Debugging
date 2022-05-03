@@ -1,0 +1,12 @@
+private Vector2 movementValue;
+public void OnMovement(InputAction.CallbackContext context)   
+{
+  movementValue = context.ReadValue<Vector2>();
+  //Debugging
+   if(context.started != false)
+   {
+    Debug.Log("Input Received");
+    return;       
+   }
+  Debug.Log(movementValue);   
+}
