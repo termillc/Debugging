@@ -1,12 +1,40 @@
-private Vector2 movementValue;
-public void OnMovement(InputAction.CallbackContext context)   
+public class Projectile : MonoBehaviour
 {
-  movementValue = context.ReadValue<Vector2>();
-  //Debugging
-   if(context.started != false)
-   {
-    Debug.Log("Input Received");
-    return;       
-   }
-  Debug.Log(movementValue);   
+    [SerializeField] float speed = 1;
+
+    Health target = null;
+
+    float damage;
+    bool isHoming = false;
+
+    private void Start() {
+        transform.LookAt(GetAimLocation());
+    }
+
+    void Update() {
+        if(target is null) { Debug.Log("Target Is Null"); return; }
+        if(isHoming && !target.Dead()) {
+            transform.LookAt(GetAimLocation());
+        }
+        transform.Translate(Vector3.forward * speed * Time.deltaTime);
+    }
+
+    private Vector3 GetAimLocation() {
+        CapsuleCollider targetCollider = target.GetComponent<CapsuleCollider>();
+        if(targetCollider is null) { Debug.Log("Target CCollider Is Null"); return target.transform.position; }
+        Debug.Log("Target's Position: " + targetCollider.transform.position);
+        return targetCollider.transform.position + Vector3.up * targetCollider.height / 2; 
+    }
+
+    public void SetTarget(Health target, float damage) {
+        this.target = target;
+        this.damage = damage;
+    }
+
+    private void OnTriggerEnter(Collider other) {
+        if(other.GetComponent<Health>() != target) { return; } 
+        if(target.Dead()) { return; }
+        target.TakeDamage(damage);
+        Destroy(gameObject);
+    }
 }
