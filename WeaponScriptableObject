@@ -1,0 +1,56 @@
+using RPG.Core;
+using UnityEngine;
+
+namespace RPG.Combat
+{
+    [CreateAssetMenu(fileName = "Weapon", menuName = "Weapons/MakeNewWeapon", order = 0)]
+    public class Weapon : ScriptableObject
+    {
+        [SerializeField] public float range = 1.5f;
+        [SerializeField] public float coolDown = 1.25f;
+        [SerializeField] public float damage = 5;
+        [SerializeField] public bool isRightHanded;
+        [SerializeField] GameObject equippedPrefab = null;
+        [SerializeField] AnimatorOverrideController animatorOverride = null;
+        [SerializeField] Projectile projectile = null;
+
+        Health target;
+
+        const string weaponName = "Weapon";
+
+        public void Spawn(Transform rightHandPosition, Transform leftHandPosition, Animator animator) {
+            DestroyOldWeapon(leftHandPosition, rightHandPosition);
+            
+            GameObject weapon = Instantiate(equippedPrefab, isRightHanded ? rightHandPosition : leftHandPosition);
+            weapon.name = weaponName;
+            
+            if (animatorOverride is not null) {
+                animator.runtimeAnimatorController = animatorOverride;
+            }
+        }
+
+        public void SpawnProjectile(Transform rightHandPosition, Transform leftHandPosition, Health target) {
+            if(projectile is not null) {
+                Projectile projectileInstance = Instantiate(projectile, isRightHanded ? rightHandPosition : leftHandPosition);
+                projectileInstance.SetTarget(target, damage);
+            }
+        }
+
+        public bool HasProjectile() {
+            if(projectile is not null) { return true; }
+            return false;
+        }
+
+        private void DestroyOldWeapon(Transform rightHandPosition, Transform leftHandPosition) {
+            Transform oldWeapon = rightHandPosition.Find(weaponName);
+            if(oldWeapon is null) {
+                oldWeapon = leftHandPosition.Find(weaponName);
+            }
+
+            if(oldWeapon is null) { return; }
+
+            oldWeapon.name = "Destroying...";
+            Destroy(oldWeapon.gameObject);
+        }
+    }
+}
