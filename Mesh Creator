@@ -1,0 +1,43 @@
+[SerializeField] GameObject parentObject;
+[SerializeField] int resolution = 10;
+[SerializeField] int meshUnitSize = 1;
+
+void Start() {
+    Mesh mesh = new Mesh();
+
+    Vector3[] vertices = new Vector3[resolution * resolution];
+    Vector3 newVertex;
+    Vector3 origin = this.transform.position;
+    int[] triangles = new int[(resolution - 1) * (resolution - 1) * 6];
+    int triIndex = 0;
+
+    for (int y = 0; y < resolution; y++) {
+        newVertex.y = this.transform.position.y;
+
+        for (int x = 0; x < resolution; x++) {
+            int i = x + y * resolution;
+            newVertex.x = x * meshUnitSize;
+            newVertex.z = y * meshUnitSize;
+
+            vertices[i] = newVertex;
+
+            if (x != resolution - 1 && y != resolution - 1) {
+                triangles[triIndex] = i;
+                triangles[triIndex + 1] = i + resolution + 1;
+                triangles[triIndex + 2] = i + resolution;
+
+                triangles[triIndex + 3] = i;
+                triangles[triIndex + 4] = i + 1;
+                triangles[triIndex + 5] = i + resolution + 1;
+                triIndex += 6;
+            }
+        } 
+    }
+
+    mesh.Clear();
+    mesh.vertices = vertices;
+    mesh.triangles = triangles;
+    mesh.RecalculateNormals();
+
+    parentObject.AddComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Standard"));
+}
