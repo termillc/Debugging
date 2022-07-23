@@ -1,0 +1,107 @@
+public class Winning : MonoBehaviour {
+      [SerializeField] Tile[] tiles;
+
+      GameObject coin;
+      Tile tile;
+      Vector2 tilePosition;
+
+      Dictionary<Vector2, Tile> playingBoard = new Dictionary<Vector2, Tile>();
+      Vector2[] surroundingSquares;
+
+      bool whiteToken = false;
+      int cNum;
+
+      private void Start() {
+          foreach(Tile tile in tiles) {
+              Vector2 internalVector = new Vector2(tile.x, tile.y);
+              playingBoard.Add(internalVector, tile);
+          }
+
+          GenerateSurroundingSquares();
+      }
+
+      public bool CheckWinningSequences(GameObject GO) {
+          bool outcome = false;
+
+          tile = GO.GetComponent<Tile>();
+          Vector2 storingVector = new Vector2(tile.x, tile.y);
+          playingBoard.Add(storingVector, tile);
+
+          cNum = tile.coin.GetComponent<Coins>().coinNumber;
+
+          foreach(int sequence in tile.possibleWinningSequences) {
+              if(sequence == cNum) {
+                  if(cNum == 6) { whiteToken = true;}
+                  outcome = CheckSecondCoin();
+              }
+          }
+          return outcome;
+      }
+
+      private bool CheckSecondCoin() {
+          bool intOutcome = false;
+          foreach(Vector2 square in surroundingSquares) {
+              Vector3 vectorLookup = new Vector2(square.x + tile.x, square.y + tile.y);
+              if(vectorLookup.x * 3 < 1 || vectorLookup.x * 3 > 5 || vectorLookup.y * 3 < 1 || vectorLookup.y * 3 > 5) { break; }
+              if(playingBoard.TryGetValue(square, out Tile secondTile)) {
+                  if(secondTile.coin != null) {
+                      Vector2 dir = square;
+                      if(secondTile.coin.GetComponent<Coins>().coinNumber == cNum - 1 || secondTile.coin.GetComponent<Coins>().coinNumber == cNum + 1) {
+                          intOutcome = CheckThirdTile(dir, secondTile);
+                      }
+                      if(secondTile.coin.GetComponent<Coins>().coinNumber == 6 && !whiteToken) {
+                          whiteToken = true;
+                          intOutcome = CheckThirdTile(dir, secondTile);
+                      }
+                  }   
+              }
+          }
+          return intOutcome;
+      }
+
+      private bool CheckThirdTile(Vector2 dir, Tile secondTile) {
+          bool intIntOutcome = false;
+          Vector2 lookup = new Vector2(secondTile.x + dir.x, secondTile.y + dir.y);
+          if(playingBoard.TryGetValue(lookup, out Tile thirdTile)) {
+              if(thirdTile.coin != null) {
+                  Vector2 dir2 = dir;
+                  if(thirdTile.coin.GetComponent<Coins>().coinNumber == cNum - 2 || thirdTile.coin.GetComponent<Coins>().coinNumber == cNum + 2) {
+                      intIntOutcome = CheckFourthTile(dir2, thirdTile);
+                  }
+                  if(thirdTile.coin.GetComponent<Coins>().coinNumber == 6 && !whiteToken) {
+                      whiteToken = true;
+                      intIntOutcome = CheckFourthTile(dir2, thirdTile);
+                  }
+              }
+          }
+          return intIntOutcome;
+      }
+
+
+      private bool CheckFourthTile(Vector2 dir2, Tile thirdTile) {
+          bool intIntIntOutcome = false;
+          Vector2 lookup = new Vector2(thirdTile.x + dir2.x, thirdTile.y + dir2.y);
+          if(playingBoard.TryGetValue(lookup, out Tile fourthTile)) {
+              if(fourthTile.coin.GetComponent<Coins>().coinNumber == cNum - 2 || fourthTile.coin.GetComponent<Coins>().coinNumber == cNum + 2) {
+                  intIntIntOutcome = true;
+              }
+              if(fourthTile.coin.GetComponent<Coins>().coinNumber == 6 && !whiteToken) {
+                  whiteToken = true;
+                  intIntIntOutcome = true;
+              }
+          }
+          return intIntIntOutcome;
+      }
+
+      private void GenerateSurroundingSquares() {
+          surroundingSquares = new Vector2[8];
+          surroundingSquares[0] = new Vector2(-1, 1);
+          surroundingSquares[1] = new Vector2(0, 1);
+          surroundingSquares[2] = new Vector2(1, 1);
+          surroundingSquares[3] = new Vector2(-1, 0);
+          surroundingSquares[4] = new Vector2(1, 0);
+          surroundingSquares[5] = new Vector2(-1, -1);
+          surroundingSquares[6] = new Vector2(0, -1);
+          surroundingSquares[7] = new Vector2(1, -1);
+      }
+  }
