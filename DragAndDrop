@@ -1,0 +1,97 @@
+[SerializeField] GameObject highlightPrefab;
+        [SerializeField] GameObject board;
+
+        BoardManager boardManager;
+        Camera cam;
+        CheckWin cWin;
+        CoinCache coinCache;
+        Touchscreen touch;
+        Visualizer visualizer;
+
+        GameObject coin;
+        GameObject highlight;
+        Vector3 touchPosition;
+        Vector3 worldPosition;
+        Vector2 originPoint;
+
+        private bool inHand = false;
+
+        void Start() {
+            TouchSim.EnableTouchSimulation();
+            touch = Touchscreen.current;
+            cam = Camera.main;
+            boardManager = board.GetComponent<BoardManager>();
+            
+
+            highlight = Instantiate(highlightPrefab, Vector3.zero, Quaternion.identity, this.transform);
+            highlight.SetActive(false);
+        }
+
+
+        void FixedUpdate() {
+            if (!touch.primaryTouch.press.isPressed) {
+                if( highlight.activeInHierarchy) { highlight.SetActive(false); }
+                if (inHand) { PlaceCoin(); }
+                return;
+            }
+
+            UpdateTouchPosition();
+            SelectCoin();
+            MoveCoin();
+        }
+
+        private void PlaceCoin() {
+            inHand = false;
+
+            RaycastHit2D hit = Physics2D.Raycast(worldPosition, Vector2.zero);
+            if(!hit.collider.TryGetComponent<TileKey>(out TileKey tile)) { ReturnCoin(); return; }
+            coin.transform.position = hit.collider.transform.position; // Actually places the coin
+
+            boardManager.SetCoin(tile.key, coin.GetComponent<Coin>().number); // Sets the coin number on the metaphysical board
+            coinCache.RemoveCoin(coin.GetComponent<Coin>().number, true); // Removes coin from coin cache
+
+            visualizer.BoardUpdated.Invoke();
+            
+            if(cWin.CheckForWin(tile.key)) {
+                cWin.playerWin.Invoke();
+            }
+        }
+
+        private void ReturnCoin() {
+            coin.transform.position = originPoint;
+        }
+
+        private void UpdateTouchPosition() {
+            touchPosition.x = touch.primaryTouch.position.x.ReadValue();
+            touchPosition.y = touch.primaryTouch.position.y.ReadValue();
+            worldPosition = cam.ScreenToWorldPoint(touchPosition);
+
+        }
+
+        private void SelectCoin() {
+            if(inHand) { return; } // So multiple coins can't be selected
+
+            Highlight();
+
+            originPoint = worldPosition;
+            RaycastHit2D hit = Physics2D.Raycast(originPoint, Vector2.zero);
+            
+            if(!hit || hit.collider == null) {return;}
+            if(hit.collider.TryGetComponent<Coin>(out Coin c)) {
+                coin = hit.collider.gameObject;
+                hit.collider.gameObject.GetComponent<CircleCollider2D>().enabled = false; // So this block of code doesn't run every frame
+                inHand = true;
+            }
+        }
+
+        private void MoveCoin() {
+            if(coin == null) { return; }
+            coin.transform.position = worldPosition;
+            Highlight();
+        }
+
+        private void Highlight() {
+            if(!highlight.activeInHierarchy) { highlight.SetActive(true); }
+            highlight.transform.position = worldPosition;
+        }
+    }
